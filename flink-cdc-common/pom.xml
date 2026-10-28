@@ -28,6 +28,16 @@ limitations under the License.
     <artifactId>flink-cdc-common</artifactId>
 
     <dependencies>
+        <!-- Baseline version module: anchors the compile-time resolution of adapter
+             signatures for the whole main module tree (runtime, composer, cli and all
+             connectors inherit it transitively). The 2.2 line does not compile against it —
+             the flink-cdc-flink-2.2 module binds its own copy at packaging time. -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-cdc-flink-1.20</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>mysql</groupId>
@@ -45,6 +55,13 @@ limitations under the License.
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- Shared ArchUnit guardrail machinery shipped in this module's test-jar. -->
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -65,34 +82,5 @@ limitations under the License.
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>flink2</id>
-            <properties>
-                <flink.version>${flink.2.x.version}</flink.version>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-cdc-flink2-compat</artifactId>
-                    <version>${project.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 
 </project>

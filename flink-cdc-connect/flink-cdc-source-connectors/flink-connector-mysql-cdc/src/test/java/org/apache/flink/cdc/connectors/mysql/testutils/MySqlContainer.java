@@ -93,13 +93,27 @@ public class MySqlContainer extends JdbcDatabaseContainer {
 
     public String getJdbcUrl(String databaseName) {
         String additionalUrlParams = constructUrlParameters("?", "&");
-        return "jdbc:mysql://"
-                + getHost()
-                + ":"
-                + getDatabasePort()
-                + "/"
-                + databaseName
-                + additionalUrlParams;
+        String url =
+                "jdbc:mysql://"
+                        + getHost()
+                        + ":"
+                        + getDatabasePort()
+                        + "/"
+                        + databaseName
+                        + additionalUrlParams;
+        // Same hardening as constructUrlForConnection: tests create their own connections from
+        // this URL, and a silently-dropped docker port mapping would otherwise block them in
+        // socketRead0 forever (no server-side peer, no error, no timeout).
+        if (!url.contains("useSSL=")) {
+            url = url + (url.contains("?") ? "&" : "?") + "useSSL=false";
+        }
+        if (!url.contains("allowPublicKeyRetrieval=")) {
+            url = url + "&allowPublicKeyRetrieval=true";
+        }
+        if (!url.contains("socketTimeout=")) {
+            url = url + "&socketTimeout=180000";
+        }
+        return url;
     }
 
     @Override
@@ -122,6 +136,14 @@ public class MySqlContainer extends JdbcDatabaseContainer {
 
         if (!url.contains("allowPublicKeyRetrieval=")) {
             url = url + "&allowPublicKeyRetrieval=true";
+        }
+
+        // Fail fast on dead connections instead of blocking forever: without a socket timeout
+        // a silently-dropped container port mapping hangs the test JVM in socketRead0 with no
+        // server-side peer, and the suite never completes. 180s is far above any legitimate
+        // query in the e2e suites; the surefire rerun then recovers from the failure.
+        if (!url.contains("socketTimeout=")) {
+            url = url + "&socketTimeout=180000";
         }
 
         return url;

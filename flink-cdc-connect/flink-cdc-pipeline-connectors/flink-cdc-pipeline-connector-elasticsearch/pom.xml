@@ -35,7 +35,12 @@ limitations under the License.
 
     <properties>
         <elasticsearch.version>8.12.1</elasticsearch.version>
-        <flink.connector.elasticsearch.version>3.1.0-1.20</flink.connector.elasticsearch.version>
+        <!-- flink.connector.elasticsearch.version is deliberately NOT defined here: a
+             module-level property would shadow the release-flink2.2 profile override
+             (nearest-definition wins), pinning the shaded flink-sql-connector-
+             elasticsearch6/7 to the 1.20-compatible build even on the 2.2 line —
+             observed as AbstractMethodError: Sink.createWriter(WriterInitContext) at
+             runtime. The default lives in the root pom; the profile overrides it. -->
         <httpclient.version>4.5.13</httpclient.version>
         <jakarta.json.version>2.0.2</jakarta.json.version>
     </properties>
@@ -196,12 +201,4 @@ limitations under the License.
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>flink2</id>
-            <properties>
-                <flink.connector.elasticsearch.version>4.0.0-2.0</flink.connector.elasticsearch.version>
-            </properties>
-        </profile>
-    </profiles>
 </project>

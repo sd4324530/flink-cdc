@@ -69,6 +69,10 @@ class OceanBaseE2eITCase extends PipelineTestEnvironment {
             OceanBaseTestUtils.createOceanBaseContainerForJdbc()
                     .withNetwork(NETWORK)
                     .withNetworkAliases("oceanbase")
+                    // The OceanBase emulator spends minutes in 'Server is initializing' on slow
+                    // container storage, exceeding the default 120s JDBC connect check and
+                    // failing every startup attempt.
+                    .withConnectTimeoutSeconds(600)
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     public final UniqueDatabase mysqlInventoryDatabase =
@@ -140,6 +144,8 @@ class OceanBaseE2eITCase extends PipelineTestEnvironment {
                                 .map(StringEscapeUtils::unescapeJava)
                                 .collect(Collectors.toList()));
         // validate table of customers
+        // the customers table may still be receiving rows when products has reached its count
+        waitingAndAssertTableCount("customers", false, 4);
         List<String> customerList = queryTable("customers", false);
         assertThat(customerList)
                 .containsExactlyInAnyOrder(
@@ -251,6 +257,8 @@ class OceanBaseE2eITCase extends PipelineTestEnvironment {
                                 .map(StringEscapeUtils::unescapeJava)
                                 .collect(Collectors.toList()));
         // validate table of customers
+        // the customers table may still be receiving rows when products has reached its count
+        waitingAndAssertTableCount("customers", false, 4);
         List<String> customerList = queryTable("customers", false);
         assertThat(customerList)
                 .containsExactlyInAnyOrder(
@@ -262,15 +270,21 @@ class OceanBaseE2eITCase extends PipelineTestEnvironment {
 
     private void waitingAndAssertTableCount(String tableName, boolean isMySQL, int expectedCount)
             throws InterruptedException {
-        // waiting for databases were created in oceanbase to avoid get connection fail.
-        Thread.sleep(10_000);
-
+        // Wait until the sync job has created the table and replicated all rows. The table may
+        // not exist yet during the first seconds (or longer on slow container storage), so
+        // query failures are tolerated within the deadline instead of failing the test.
+        long deadline = System.currentTimeMillis() + EVENT_WAITING_TIMEOUT.toMillis();
         int tableRowsCount = 0;
-        for (int i = 0; i < 10; ++i) {
-            tableRowsCount = getTableRowsCount(() -> getConnection(isMySQL), tableName);
-            if (tableRowsCount < expectedCount) {
-                Thread.sleep(100);
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                tableRowsCount = getTableRowsCount(() -> getConnection(isMySQL), tableName);
+            } catch (RuntimeException e) {
+                tableRowsCount = 0;
             }
+            if (tableRowsCount == expectedCount) {
+                return;
+            }
+            Thread.sleep(500);
         }
         assertThat(tableRowsCount).isEqualTo(expectedCount);
     }

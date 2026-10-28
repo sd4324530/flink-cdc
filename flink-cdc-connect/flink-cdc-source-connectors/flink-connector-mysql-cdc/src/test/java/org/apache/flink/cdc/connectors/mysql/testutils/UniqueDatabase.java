@@ -19,9 +19,11 @@ package org.apache.flink.cdc.connectors.mysql.testutils;
 
 import org.assertj.core.api.Assertions;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -120,9 +122,7 @@ public class UniqueDatabase {
                         Arrays.stream(
                                         Stream.concat(
                                                         Arrays.stream(CREATE_DATABASE_DDL),
-                                                        Files.readAllLines(
-                                                                Paths.get(ddlTestFile.toURI()))
-                                                                .stream())
+                                                        readResourceLines(ddlTestFile))
                                                 .map(String::trim)
                                                 .filter(x -> !x.startsWith("--") && !x.isEmpty())
                                                 .map(
@@ -142,6 +142,17 @@ public class UniqueDatabase {
             }
         } catch (final Exception e) {
             throw new IllegalStateException(e);
+        }
+    }
+
+    /** Reads the DDL resource as a stream so it also works from a test-jar on the classpath. */
+    private static Stream<String> readResourceLines(URL url) {
+        try (BufferedReader reader =
+                new BufferedReader(
+                        new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+            return reader.lines().collect(Collectors.toList()).stream();
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot read " + url, e);
         }
     }
 

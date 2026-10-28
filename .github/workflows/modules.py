@@ -28,7 +28,6 @@ MODULES_PIPELINE_CONNECTORS = [
     "flink-cdc-connect/flink-cdc-pipeline-connectors/flink-cdc-pipeline-connector-mysql",
     "flink-cdc-connect/flink-cdc-pipeline-connectors/flink-cdc-pipeline-connector-oracle",
     "flink-cdc-connect/flink-cdc-pipeline-connectors/flink-cdc-pipeline-connector-oceanbase",
-    "flink-cdc-connect/flink-cdc-pipeline-connectors/flink-cdc-pipeline-connector-maxcompute",
     "flink-cdc-connect/flink-cdc-pipeline-connectors/flink-cdc-pipeline-connector-postgres",
     "flink-cdc-connect/flink-cdc-pipeline-connectors/flink-cdc-pipeline-connector-paimon",
     "flink-cdc-connect/flink-cdc-pipeline-connectors/flink-cdc-pipeline-connector-starrocks",
@@ -142,6 +141,10 @@ MODULES_SOURCE_E2E = [
     "flink-cdc-e2e-tests/flink-cdc-source-e2e-tests"
 ]
 
+MODULES_VERSION_MODULES = [
+    "flink-cdc-flink/flink-cdc-flink-2.2"
+]
+
 ALL_MODULES = set(
     MODULES_CORE +
     MODULES_PIPELINE_CONNECTORS +
@@ -168,7 +171,8 @@ ALL_MODULES = set(
     MODULES_FLUSS +
     MODULES_HUDI +
     MODULES_PIPELINE_E2E +
-    MODULES_SOURCE_E2E
+    MODULES_SOURCE_E2E +
+    MODULES_VERSION_MODULES
 )
 
 test_modules = set()

@@ -111,6 +111,9 @@ public abstract class PipelineTestEnvironment extends TestLogger {
                             .withDatabaseName("flink-test")
                             .withUsername("flinkuser")
                             .withPassword("flinkpw")
+                            // MySQL 8 initialization (InnoDB file creation + init SQL) can
+                            // far exceed the default 120s JDBC connect timeout on slow disks.
+                            .withConnectTimeoutSeconds(600)
                             .withNetwork(NETWORK)
                             .withNetworkAliases(INTER_CONTAINER_MYSQL_ALIAS)
                             .withLogConsumer(new Slf4jLogConsumer(LOG));
@@ -288,6 +291,17 @@ public abstract class PipelineTestEnvironment extends TestLogger {
         // Attach default MySQL and Values connectors
         containerPaths.add(version.workDir() + "/lib/mysql-cdc-pipeline-connector.jar");
         containerPaths.add(version.workDir() + "/lib/values-cdc-pipeline-connector.jar");
+
+        // On Flink 2.x the version module jar (shadow classes like SinkFunction /
+        // YieldingOperatorFactory) must be shipped with the job: the connector fat jars shade
+        // API types whose signatures link against classes Flink 2.x removed, and the cluster's
+        // user class loader resolves them from the shipped jars only. TarballFetcher deploys
+        // the jar into the SNAPSHOT lib directory; the CLI finds it there via its own
+        // classpath (lib/*.jar), but it must also be submitted with the job graph.
+        if (System.getProperty("specifiedFlinkVersion", "").startsWith("2.")
+                && TarballFetcher.CdcVersion.SNAPSHOT.equals(version)) {
+            containerPaths.add(version.workDir() + "/lib/flink-cdc-flink-2.2.jar");
+        }
 
         StringBuilder sb = new StringBuilder();
         for (String containerPath : containerPaths) {

@@ -1,0 +1,42 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Flink APIs that main modules must NOT directly extend or implement — they are
+# signature-divergent or @Internal across Flink versions; subclassing must go
+# through the version-module adapters. When adding a new supported Flink version,
+# scan the API delta against all existing lines and append newly divergent APIs
+# here — the union is what main code must avoid.
+# This file is the single source of truth consumed by
+# org.apache.flink.cdc.common.utils.ArchitectureGuardrailsPredicates. Lines
+# starting with '#' are comments.
+org.apache.flink.api.common.typeutils.TypeSerializerSnapshot
+org.apache.flink.api.connector.sink2.Sink.InitContext
+org.apache.flink.api.connector.sink2.StatefulSink.StatefulSinkWriter
+org.apache.flink.api.connector.sink2.WriterInitContext
+org.apache.flink.api.common.functions.RuntimeContext
+org.apache.flink.connector.base.source.reader.SingleThreadFetcherManager
+org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase
+org.apache.flink.connector.base.sink.AsyncSinkBase
+org.apache.flink.connector.base.sink.writer.AsyncSinkWriter
+org.apache.flink.streaming.api.operators.AbstractStreamOperator
+org.apache.flink.streaming.api.operators.AbstractStreamOperatorFactory
+org.apache.flink.streaming.api.operators.async.AsyncWaitOperator
+org.apache.flink.streaming.api.operators.async.AsyncWaitOperatorFactory
+org.apache.flink.streaming.api.operators.collect.CollectResultIterator
+org.apache.flink.core.execution.RestoreMode
+org.apache.flink.table.catalog.CatalogTable
+org.apache.flink.table.factories.FactoryUtil
+org.apache.flink.configuration.RestartStrategyOptions
+org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder

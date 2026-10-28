@@ -73,6 +73,9 @@ public class MysqlE2eWithYarnApplicationITCase extends PipelineTestOnYarnEnviron
                             .withDatabaseName("flink-test")
                             .withUsername("flinkuser")
                             .withPassword("flinkpw")
+                            // MySQL 8 initialization can far exceed the default 120s JDBC
+                            // connect timeout on slow disks (see PipelineTestEnvironment).
+                            .withConnectTimeoutSeconds(600)
                             .withNetwork(Network.newNetwork())
                             .withNetworkAliases(INTER_CONTAINER_MYSQL_ALIAS)
                             .withLogConsumer(new Slf4jLogConsumer(LOG));

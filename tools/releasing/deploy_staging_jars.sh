@@ -23,6 +23,15 @@
 MVN=${MVN:-mvn}
 CUSTOM_OPTIONS=${CUSTOM_OPTIONS:-}
 
+# Note on per-line releases (per-Flink-version modules, FLIP 4.8):
+# Deploying the 2.2 line must (a) run with -Prelease-flink2.2 so the ecosystem versions and
+# the 2.2 version module are picked up, and (b) rewrite the thin-jar POMs' dependency on the
+# baseline version module (flink-cdc-flink-1.20) to the line's version module
+# (flink-cdc-flink-2.2) before staging, because main-module POMs always carry the baseline
+# dependency. The versions-maven-plugin stamping below handles the version string; the
+# baseline->line module swap still needs to be added here when the release tooling switches
+# to the per-line profiles.
+
 # fail immediately
 set -o errexit
 set -o nounset
@@ -68,10 +77,6 @@ MVN_OPTIONS="-Papache-release -DskipTests -DretryFailedDeploymentCount=10"
 if [ -n "${FLINK_VERSION:-}" ]; then
     echo "Using Flink version: ${FLINK_VERSION}"
 
-    # Extract and set flink.major.version (e.g., "1.20" from "1.20.3")
-    flink_major_version=$(echo "${FLINK_VERSION}" | cut -d. -f1,2)
-    MVN_OPTIONS="${MVN_OPTIONS} -Dflink.major.version=${flink_major_version}"
-
     # Update project version: RELEASE_VERSION-FLINK_VERSION
     current_version=$(get_pom_version)
     echo "Current version: ${current_version}"
@@ -91,10 +96,14 @@ if [ -n "${FLINK_VERSION:-}" ]; then
         set_revision_property "${new_version}"
     fi
 
-    # Add -Pflink2 profile if FLINK_VERSION starts with "2"
-    if [[ "${FLINK_VERSION}" == 2* ]]; then
-        echo "Enabling flink2 profile"
-        MVN_OPTIONS="${MVN_OPTIONS} -Pflink2"
+    # Use the per-line release profile for non-baseline lines (e.g. -Prelease-flink2.2).
+    # Main modules are always compiled against the 1.20 baseline; the profile selects the
+    # version module and ecosystem versions bound into the line's artifacts. Normalize
+    # FLINK_VERSION to major.minor so "2.2.0" maps to the existing release-flink2.2 profile.
+    if [[ "${FLINK_VERSION}" != 1* ]]; then
+        RELEASE_LINE=$(echo "${FLINK_VERSION}" | cut -d. -f1,2)
+        echo "Enabling release-flink${RELEASE_LINE} profile"
+        MVN_OPTIONS="${MVN_OPTIONS} -Prelease-flink${RELEASE_LINE}"
     fi
 fi
 

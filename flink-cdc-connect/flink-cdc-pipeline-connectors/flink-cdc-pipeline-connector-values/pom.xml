@@ -46,8 +46,61 @@ limitations under the License.
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>release-flink2.2</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <version>${maven.shade.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>shade-flink</id>
+                                <configuration>
+                                    <filters combine.children="append">
+                                        <!-- ValuesDataSinkFunction implements the legacy
+                                             SinkFunction interface; the sink.api option
+                                             defaults to SINK_V2 and no pipeline YAML uses the
+                                             legacy path, so drop the class from the 2.2-line
+                                             jar entirely. Note: shading flink-cdc-flink-2.2
+                                             into this fat jar (like flink-sql-connector-mysql-
+                                             cdc does) is not possible today — it would form a
+                                             reactor cycle with the version module's test
+                                             dependencies on this connector. On the 2.2 line
+                                             the shadow SinkFunction is provided by the
+                                             flink-cdc-flink-2.2 jar deployed alongside. -->
+                                        <filter>
+                                            <artifact>*:*</artifact>
+                                            <excludes>
+                                                <exclude>org/apache/flink/cdc/connectors/values/sink/ValuesDataSinkFunction.class</exclude>
+                                            </excludes>
+                                        </filter>
+                                    </filters>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>test-jar</id>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>

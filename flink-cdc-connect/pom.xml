@@ -33,129 +33,40 @@ limitations under the License.
         <module>flink-cdc-pipeline-connectors</module>
     </modules>
 
+    <dependencies>
+        <!-- Test utilities from the baseline version module (e.g. adapter test doubles). -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-cdc-flink-1.20</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <!-- Shared ArchUnit guardrail machinery (ArchitectureGuardrailsPredicates and the
+             adapter-confinement lists) — every connector module hosts a thin guardrail test. -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-cdc-common</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
     <profiles>
         <profile>
-            <id>flink1</id>
-            <properties>
-                <paimon.flink.major.version>1.20</paimon.flink.major.version>
-                <iceberg.flink.major.version>1.20</iceberg.flink.major.version>
-            </properties>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-cdc-flink1-compat</artifactId>
-                    <version>${project.version}</version>
-                    <type>test-jar</type>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
+            <id>release-flink1.20</id>
+            <!-- Explicit no-op: the default build already targets the 1.20 baseline. -->
         </profile>
-        <profile>
-            <id>flink2</id>
-            <properties>
-                <flink.version>${flink.2.x.version}</flink.version>
-                <iceberg.flink.major.version>2.0</iceberg.flink.major.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-streaming-java</artifactId>
-                    <version>${flink.2.x.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-cdc-flink2-compat</artifactId>
-                    <version>${project.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-cdc-flink2-compat</artifactId>
-                    <version>${project.version}</version>
-                    <type>test-jar</type>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-cdc-flink1-compat</artifactId>
-                    <version>${project.version}</version>
-                    <scope>provided</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>*</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-                <!-- Exclude flink1-compat test-jar when using flink2 profile -->
-                <dependency>
-                    <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-cdc-flink1-compat</artifactId>
-                    <version>${project.version}</version>
-                    <type>test-jar</type>
-                    <scope>provided</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>*</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-flink2-extra-libs</id>
-                                <phase>process-test-resources</phase>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>org.apache.flink</groupId>
-                                            <artifactId>flink-cdc-flink2-compat</artifactId>
-                                            <version>${project.version}</version>
-                                            <outputDirectory>${project.build.directory}/flink2-extra-libs</outputDirectory>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.apache.flink</groupId>
-                                            <artifactId>flink-shaded-guava</artifactId>
-                                            <version>${flink.2.x.shaded.guava.version}</version>
-                                            <outputDirectory>${project.build.directory}/flink2-extra-libs</outputDirectory>
-                                        </artifactItem>
-                                        <artifactItem>
-                                            <groupId>org.apache.flink</groupId>
-                                            <artifactId>flink-streaming-java</artifactId>
-                                            <version>${flink.2.x.version}</version>
-                                            <outputDirectory>${project.build.directory}/flink2-extra-libs</outputDirectory>
-                                        </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <additionalClasspathElements>
-                                <additionalClasspathElement>${project.build.directory}/flink2-extra-libs/flink-cdc-flink2-compat-${project.version}.jar</additionalClasspathElement>
-                                <additionalClasspathElement>${project.build.directory}/flink2-extra-libs/flink-shaded-guava-${flink.2.x.shaded.guava.version}.jar</additionalClasspathElement>
-                                <additionalClasspathElement>${project.build.directory}/flink2-extra-libs/flink-streaming-java-${flink.2.x.version}.jar</additionalClasspathElement>
-                            </additionalClasspathElements>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
+        <!-- release-flink2.2 needs no connector-level overrides: the root pom's profile with
+             the same id already sets the 2.2-line ecosystem versions (paimon/iceberg/fluss/
+             kafka/elasticsearch/guava) for every module in the reactor. -->
     </profiles>
+
 </project>

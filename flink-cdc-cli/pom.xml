@@ -38,6 +38,21 @@ limitations under the License.
             <artifactId>flink-cdc-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- Shared ArchUnit guardrail machinery (ArchitectureGuardrailsPredicates and the
+             adapter-confinement lists) — this module hosts a thin guardrail test. -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-cdc-common</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
         <!-- YAML parser utilities -->
         <dependency>
             <groupId>org.snakeyaml</groupId>
@@ -81,34 +96,5 @@ limitations under the License.
         </dependency>
 
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>flink2</id>
-            <properties>
-                <flink.version>${flink.2.x.version}</flink.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-cdc-flink2-compat</artifactId>
-                    <version>${project.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
 </project>

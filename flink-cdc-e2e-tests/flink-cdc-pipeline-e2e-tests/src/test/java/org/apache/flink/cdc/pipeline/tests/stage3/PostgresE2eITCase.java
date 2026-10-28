@@ -71,6 +71,9 @@ public class PostgresE2eITCase extends PipelineTestEnvironment {
                     .withNetwork(NETWORK)
                     .withUsername(POSTGRES_TEST_USER)
                     .withPassword(POSTGRES_TEST_PASSWORD)
+                    // Postgres init can exceed the port-wait defaults on slow container storage
+                    // (same rationale as the MySQL connect timeout); the previous 30s cap made
+                    // every startup attempt time out on such hosts.
                     .withLogConsumer(new Slf4jLogConsumer(LOG))
                     .withCommand(
                             "postgres",
@@ -81,8 +84,8 @@ public class PostgresE2eITCase extends PipelineTestEnvironment {
                             "max_replication_slots=20",
                             "-c",
                             "wal_level=logical")
-                    .waitingFor(Wait.forListeningPort())
-                    .withStartupTimeout(Duration.ofSeconds(30L));
+                    .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(10)))
+                    .withConnectTimeoutSeconds(600);
 
     private final UniqueDatabase postgresInventoryDatabase =
             new UniqueDatabase(

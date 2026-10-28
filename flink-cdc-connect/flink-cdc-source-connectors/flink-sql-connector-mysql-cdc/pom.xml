@@ -35,6 +35,42 @@ limitations under the License.
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>release-flink2.2</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.flink</groupId>
+                    <artifactId>flink-cdc-flink-2.2</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>shade-flink</id>
+                                <configuration>
+                                    <!-- The baseline version module reaches this module
+                                         transitively (common -> flink-cdc-flink-1.20) and must
+                                         not be shaded next to the 2.2 module. -->
+                                    <artifactSet>
+                                        <excludes>
+                                            <exclude>org.apache.flink:flink-cdc-flink-1.20</exclude>
+                                        </excludes>
+                                    </artifactSet>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
@@ -60,7 +96,7 @@ limitations under the License.
                                     <include>org.apache.flink:flink-cdc-common</include>
                                     <include>org.apache.flink:flink-connector-debezium</include>
                                     <include>org.apache.flink:flink-connector-mysql-cdc</include>
-                                    <include>org.apache.flink:flink-cdc-flink*-compat</include>
+                                    <include>org.apache.flink:flink-cdc-flink-*</include>
                                     <include>org.antlr:antlr4-runtime</include>
                                     <include>org.apache.kafka:*</include>
                                     <include>com.zendesk:mysql-binlog-connector-java</include>

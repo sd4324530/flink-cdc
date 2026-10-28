@@ -55,7 +55,7 @@ limitations under the License.
                                     <include>org.apache.flink:flink-connector-debezium</include>
                                     <include>org.apache.flink:flink-connector-tidb-cdc</include>
                                     <include>org.tikv:tikv-client-java</include>
-                                    <include>org.apache.flink:flink-cdc-flink*-compat</include>
+                                    <include>org.apache.flink:flink-cdc-flink-*</include>
                                     <include>com.google.protobuf:*</include>
                                     <include>io.grpc:*</include>
                                     <!--  Include fixed version 30.1.1-jre-14.0 of flink shaded guava  -->
@@ -88,4 +88,37 @@ limitations under the License.
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>release-flink2.2</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.flink</groupId>
+                    <artifactId>flink-cdc-flink-2.2</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-shade-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>shade-flink</id>
+                                <configuration>
+                                    <artifactSet>
+                                        <excludes>
+                                            <exclude>org.apache.flink:flink-cdc-flink-1.20</exclude>
+                                        </excludes>
+                                    </artifactSet>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

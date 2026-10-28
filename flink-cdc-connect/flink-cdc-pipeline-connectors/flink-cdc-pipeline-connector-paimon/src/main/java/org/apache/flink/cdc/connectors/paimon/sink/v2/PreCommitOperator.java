@@ -17,11 +17,11 @@
 
 package org.apache.flink.cdc.connectors.paimon.sink.v2;
 
+import org.apache.flink.cdc.runtime.operators.AbstractStreamOperatorAdapter;
 import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.runtime.state.StateSnapshotContext;
 import org.apache.flink.streaming.api.connector.sink2.CommittableMessage;
 import org.apache.flink.streaming.api.connector.sink2.CommittableWithLineage;
-import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.BoundedOneInput;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
@@ -44,7 +44,7 @@ import java.util.List;
 
 /** An Operator to add checkpointId to MultiTableCommittable and generate CommittableSummary. */
 public class PreCommitOperator
-        extends AbstractStreamOperator<CommittableMessage<MultiTableCommittable>>
+        extends AbstractStreamOperatorAdapter<CommittableMessage<MultiTableCommittable>>
         implements OneInputStreamOperator<
                         CommittableMessage<MultiTableCommittable>,
                         CommittableMessage<MultiTableCommittable>>,

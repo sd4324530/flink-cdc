@@ -57,7 +57,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
@@ -87,7 +86,15 @@ import static org.apache.flink.util.Preconditions.checkState;
 
 /** IT tests to cover various newly added tables during capture process. */
 @Timeout(value = 300, unit = TimeUnit.SECONDS)
-@DisabledIfSystemProperty(named = "flink.profile", matches = "flink2")
+// Tracked by JIRA FLINK-xxxxx (number to be assigned). On the Flink 2.2 line this suite shows
+// 6/21 failures (Phase 2 triage, re-confirmed in Phase 3 on the legacy flink2 channel), all with
+// the same signature: exactly one missing row per newly-added table per discovery-triggered
+// restart — the UPDATE that flips the first row's country 'China' -> 'CHINA' (id
+// 416874195632735147) is lost, i.e. binlog events in the window between the new table's snapshot
+// and the enumerator's restart repositioning are dropped under Flink 2.2's restart semantics.
+// A CDC-side fix would land in the mysql-cdc/base enumerator/reader hot path and has no standing
+// 2.2 unit-test channel to regress against (see RerunSuite), so it is registered rather than
+// hot-patched. The suite passes 21/21 on the 1.20 baseline line.
 class NewlyAddedTableITCase extends MySqlSourceTestBase {
 
     private final UniqueDatabase customDatabase =

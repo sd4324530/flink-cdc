@@ -98,6 +98,10 @@ class Db2E2eITCase extends FlinkContainerTestEnvironment {
                         .withPassword("flinkpw")
                         .withEnv("AUTOCONFIG", "false")
                         .withEnv("ARCHIVE_LOGS", "true")
+                        // DB2 instance initialization takes minutes on slow container
+                        // storage, far beyond the default wait timeout (same hardening
+                        // rationale as the MySQL/Postgres containers).
+                        .withStartupTimeout(Duration.ofMinutes(10))
                         .acceptLicense()
                         .withNetwork(NETWORK)
                         .withNetworkAliases(INTER_CONTAINER_DB2_ALIAS)

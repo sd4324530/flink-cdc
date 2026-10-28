@@ -84,6 +84,23 @@ public abstract class TarballFetcher {
                             TestUtils.getResource("values-cdc-pipeline-connector.jar")),
                     version.workDir() + "/lib/values-cdc-pipeline-connector.jar");
 
+            // On the 2.2 line the version module jar must sit next to the fat jars: the fat
+            // jars shade common API types whose signatures link against classes Flink 2.x
+            // removed (e.g. SinkFunction), and flink-cdc-flink-2.2 carries the shadow classes
+            // those links resolve against. (The same module classes are shaded into
+            // flink-cdc-dist.jar, but a fat jar's own copy of the common types is loaded
+            // first when the jar's classes are linked.)
+            String specifiedFlinkVersion = System.getProperty("specifiedFlinkVersion", "");
+            if (specifiedFlinkVersion.startsWith("2.")) {
+                container.copyFileToContainer(
+                        MountableFile.forHostPath(
+                                TestUtils.getResource(
+                                        "flink-cdc-flink-2\\.2-[\\d.]+(-SNAPSHOT)?\\.jar$",
+                                        "flink-cdc-flink",
+                                        "flink-cdc-flink-2.2")),
+                        version.workDir() + "/lib/flink-cdc-flink-2.2.jar");
+            }
+
             // Ensure the script has execute permission
             runInContainerAsRoot(container, "chmod", "+x", version.workDir() + "/bin/flink-cdc.sh");
 
@@ -110,12 +127,16 @@ public abstract class TarballFetcher {
     private static void downloadAndCopyToContainer(
             GenericContainer<?> container, String url, String containerPath) throws Exception {
         Path tempFile = Files.createTempFile("download-", ".tmp");
-        FileUtils.copyURLToFile(
-                new URL(url),
-                tempFile.toFile(),
-                (int) Duration.ofMinutes(1).toMillis(),
-                (int) Duration.ofMinutes(5).toMillis());
-        container.copyFileToContainer(MountableFile.forHostPath(tempFile), containerPath);
+        try {
+            FileUtils.copyURLToFile(
+                    new URL(url),
+                    tempFile.toFile(),
+                    (int) Duration.ofMinutes(1).toMillis(),
+                    (int) Duration.ofMinutes(5).toMillis());
+            container.copyFileToContainer(MountableFile.forHostPath(tempFile), containerPath);
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
     }
 
     private static void runInContainerAsRoot(GenericContainer<?> container, String... command)
@@ -164,12 +185,11 @@ public abstract class TarballFetcher {
                     .subList(getAllVersions().indexOf(version), getAllVersions().size());
         }
 
+        private static final String DEFAULT_TARBALL_REPO = "https://dlcdn.apache.org/flink";
+
         public String tarballUrl() {
-            return "https://dlcdn.apache.org/flink/flink-cdc-"
-                    + version
-                    + "/flink-cdc-"
-                    + version
-                    + "-bin.tar.gz";
+            String repo = System.getProperty("flink.cdc.e2e.tarball.repo", DEFAULT_TARBALL_REPO);
+            return repo + "/flink-cdc-" + version + "/flink-cdc-" + version + "-bin.tar.gz";
         }
 
         public String workDir() {

@@ -41,7 +41,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
@@ -66,7 +65,15 @@ import static org.apache.flink.util.Preconditions.checkState;
 
 /** IT tests to cover various newly added collections during capture process. */
 @Timeout(value = 500, unit = TimeUnit.SECONDS)
-@DisabledIfSystemProperty(named = "flink.profile", matches = "flink2")
+// Tracked by JIRA FLINK-xxxxx: on the Flink 2.2 line this suite shows 7/20 failures (Phase 3
+// triage on the legacy flink2 channel) with the same signature as the mysql/postgres/oracle
+// suites — exactly one missing row per newly-added collection per discovery-triggered restart:
+// the UPDATE flipping the first row's country 'China' -> 'CHINA' (id 416874195632735147) is
+// lost, i.e. oplog events inside the restart window are dropped under Flink 2.2's restart
+// semantics. The shared signature across four base-framework connectors points at the common
+// newly-added-table restart path rather than connector-specific code; a fix would land in the
+// flink-cdc-base hot path with no standing 2.2 unit-test channel to regress against (see the
+// mysql suite's note and RerunSuite). The suite passes 20/20 on the 1.20 baseline line.
 class NewlyAddedTableITCase extends MongoDBSourceTestBase {
 
     private String customerDatabase;

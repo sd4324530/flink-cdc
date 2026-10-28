@@ -35,13 +35,13 @@ This file provides guidance for AI coding agents working with the Apache Flink C
 
 - Fast dev build (skip tests and format checks): `mvn clean install -DskipTests -Dspotless.check.skip=true -Dcheckstyle.skip=true`
 - Full build against Flink 1.x (default): `mvn clean package -DskipTests`
-- Full build against Flink 2.x: `mvn clean package -DskipTests -Pflink2`
+- Full build against Flink 2.x: `mvn clean install -DskipTests` (default line first), then install the 2.2-line artifacts with `mvn install -Prelease-flink2.2 -pl flink-cdc-dist,flink-cdc-connect/flink-cdc-source-connectors/flink-sql-connector-mysql-cdc,flink-cdc-connect/flink-cdc-pipeline-connectors -DskipTests` (no `-am`: the 2.2 profile swaps guava31 for guava33 whose shaded package names differ, so main modules must NOT be recompiled under it; the default-line install provides them)
 - Single module (e.g. `flink-cdc-common`): `mvn clean package -DskipTests -pl flink-cdc-common -am`
 
 ### Testing
 
 - Run all tests for a module: `mvn verify -pl flink-cdc-common`
-- Run all tests against Flink 2.x: `mvn verify -pl flink-cdc-common -Pflink2`
+- Run all tests against Flink 2.x: `mvn verify -pl flink-cdc-flink/flink-cdc-flink-2.2 -am` (version module: own tests + rerun suites of main modules against the 2.2 artifacts)
 - Run a single test class: `mvn -pl flink-cdc-common -Dtest=MyTest test`
 - Run a single test method: `mvn -pl flink-cdc-common -Dtest=MyTest#myMethod test`
 
@@ -49,6 +49,7 @@ This file provides guidance for AI coding agents working with the Apache Flink C
 
 - Before committing changes, run `mvn spotless:apply` and `mvn spotless:check` to enforce code style rules.
 - Make sure newly added files have proper ASF license headers.
+- Release-line sanity (per-Flink-version modules FLIP): `tools/ci/verify-release-line.sh <flink1.20|flink2.2>` asserts line-correct packaging, and `tools/ci/verify-adapter-contract.sh` asserts that same-FQCN adapters in both version modules expose identical public signatures. Both run in nightly CI; run them locally after touching version modules or adapters (they need both modules' jars installed or packaged first).
 
 ## Repository Structure
 
@@ -64,12 +65,16 @@ Flink CDC is organized around the Pipeline abstraction: a user-defined data pipe
 
 ### Flink Version Compatibility
 
-Currently, Flink CDC supports two Flink generations simultaneously:
+Currently, Flink CDC supports two Flink generations simultaneously through per-Flink-version
+version modules under `flink-cdc-flink/`:
 
-- `flink-cdc-flink1-compat` — Flink 1.x compatibility layer (currently 1.20.3). Default profile.
-- `flink-cdc-flink2-compat` — Flink 2.x compatibility layer (currently 2.2.0). Activated via `-Pflink2`.
+- `flink-cdc-flink-1.20` — Flink 1.20 baseline version module (adapters, backports, version tests). Default profile.
+- `flink-cdc-flink-2.2` — Flink 2.2 version module (adapters, shadow classes, version tests, and rerun suites of main modules' core tests). Built on the default line; bound into 2.2-line artifacts via `-Prelease-flink2.2`.
 
-All modules that depend on Flink APIs must declare their Flink dependencies as `provided` and reference `${flink.version}`, which is resolved by the active profile.
+See `flink-cdc-flink/DIVERGENCE-INVENTORY.md` for the per-class divergence inventory and the
+FLIP at the repo root (`FLIP-per-flink-version-modules.md`) for the target architecture.
+
+All modules that depend on Flink APIs must declare their Flink dependencies as `provided` and reference `${flink.version}`, which is anchored to the Flink 1.20 baseline in the root pom; per-Flink-version code lives in the version modules under `flink-cdc-flink/`, and release lines are produced with the `-Prelease-flink<version>` packaging profiles.
 Please verify your changes in both Flink 1.20 (LTS) and Flink 2.x (latest).
 
 ### Connectors (`flink-cdc-connect/`)

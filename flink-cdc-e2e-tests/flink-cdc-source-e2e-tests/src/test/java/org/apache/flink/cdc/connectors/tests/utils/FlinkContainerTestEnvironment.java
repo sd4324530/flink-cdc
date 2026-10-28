@@ -106,6 +106,10 @@ public abstract class FlinkContainerTestEnvironment extends TestLogger {
                             .withDatabaseName("flink-test")
                             .withUsername("flinkuser")
                             .withPassword("flinkpw")
+                            // Same hardening as PipelineTestEnvironment: MySQL 8 init can
+                            // exceed the default 120s JDBC connect check on slow container
+                            // storage, failing every class at container startup.
+                            .withConnectTimeoutSeconds(600)
                             .withNetwork(NETWORK)
                             .withNetworkAliases(INTER_CONTAINER_MYSQL_ALIAS)
                             .withLogConsumer(new Slf4jLogConsumer(LOG));

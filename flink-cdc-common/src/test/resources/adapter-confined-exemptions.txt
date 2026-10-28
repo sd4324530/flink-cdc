@@ -1,0 +1,27 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Legacy direct-supertype exemptions of the ArchUnit adapter-confinement guardrail.
+# Format: <main-module class FQCN> | <confined Flink API FQCN> | <reason — JIRA>
+# Every entry is tracked debt on its way to an adapter (or a verified-safe
+# permanent exemption); new code must NOT be added here — extend the
+# version-module adapters instead. When adding a new supported Flink version,
+# re-verify each entry against the new line's signatures.
+org.apache.flink.cdc.connectors.mysql.source.reader.MySqlSourceReader | org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase | FLINK-xxxxx: reader ctor chain is deep and checkpoint-lifecycle sensitive; the 2.2 adapter variant silently drops the elementsQueue ctor param, so a direct swap changes 2.2 queue semantics
+org.apache.flink.cdc.connectors.base.source.reader.IncrementalSourceReader | org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase | FLINK-xxxxx: same rationale as MySqlSourceReader (shared incremental source reader)
+org.apache.flink.cdc.runtime.operators.sink.DataSinkWriterOperatorFactory | org.apache.flink.streaming.api.operators.AbstractStreamOperatorFactory | FLINK-xxxxx: @Internal factory with javap-identical public/protected signatures at 1.20/2.2 (2.2 relocated streaming-java -> runtime); adapter conversion deferred as tracked debt
+org.apache.flink.cdc.connectors.maxcompute.coordinator.SessionManageCoordinatedOperatorFactory | org.apache.flink.streaming.api.operators.AbstractStreamOperatorFactory | FLINK-xxxxx: same evidence as DataSinkWriterOperatorFactory
+org.apache.flink.cdc.runtime.operators.transform.async.AsyncPostTransformOperatorFactory | org.apache.flink.streaming.api.operators.async.AsyncWaitOperatorFactory | FLINK-xxxxx: @Internal factory, public members javap-identical at 1.20/2.2 (implements-clause YieldingOperatorFactory relocation is bridged by the 2.2 shadow)
+org.apache.flink.cdc.connectors.elasticsearch.v2.Elasticsearch8AsyncSinkBuilder | org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder | FLINK-xxxxx: @Internal builder with javap-identical public/protected signatures at 1.20/2.2
